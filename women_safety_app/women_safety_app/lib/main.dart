@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'services/shake_service.dart';
 import 'services/notification_handler.dart'; // Required for background isolation
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://iqhbtittcyrkhsasbogr.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaGJ0aXR0Y3lya2hzYXNib2dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2Njg5MDgsImV4cCI6MjA4NTI0NDkwOH0.QRYbw743utzqFjLXVUJ0gtohZepY0pPPo3uMhIeYAsE',
+  );
+
   // Ensure the background handler is available to the compiler
   notificationTapBackground; 
   await ShakeDetectionService().initializeNotifications();

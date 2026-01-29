@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "534906022648",
+    "project_id": "kraft-a3b26",
+    "storage_bucket": "kraft-a3b26.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:534906022648:android:4db6839ae7be425425a90d",
+        "android_client_info": {
+          "package_name": "com.example.women_safety_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByMJSo5AbKWOsT0-pXRCNljbbk9ZzruIA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

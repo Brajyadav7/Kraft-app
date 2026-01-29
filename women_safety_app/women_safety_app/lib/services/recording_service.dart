@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:gal/gal.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RecordingService {
   static CameraController? _controller;
@@ -11,54 +12,78 @@ class RecordingService {
 
   static bool get isRecording => isRecordingNotifier.value;
 
-  /// Initialize the camera (rear camera by default)
-  static Future<void> initialize() async {
+  /// Initialize the camera
+  static Future<void> initialize({bool enableAudio = true}) async {
     try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) {
-        debugPrint("No cameras available");
-        return;
+      // 1. Explicitly check permissions
+      var camStatus = await Permission.camera.status;
+      if (!camStatus.isGranted) {
+        camStatus = await Permission.camera.request();
+        if (!camStatus.isGranted) throw Exception("Camera permission denied");
       }
 
-      // Use the first available camera (usually rear)
+      if (enableAudio) {
+        var micStatus = await Permission.microphone.status;
+        if (!micStatus.isGranted) {
+          micStatus = await Permission.microphone.request();
+          if (!micStatus.isGranted) throw Exception("Microphone permission denied");
+        }
+      }
+
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) throw Exception("No cameras available");
+
       final camera = cameras.first;
 
       _controller = CameraController(
         camera,
-        ResolutionPreset.medium, // Medium quality to save space but keeping it clear
-        enableAudio: true,
+        ResolutionPreset.medium, 
+        enableAudio: enableAudio,
       );
 
       await _controller!.initialize();
-      debugPrint("Camera initialized");
+      debugPrint("Camera initialized (Audio: $enableAudio)");
     } catch (e) {
       debugPrint("Error initializing recording service: $e");
+      throw Exception("Init failed: $e");
     }
   }
 
   /// Start recording video
   static Future<void> startRecording() async {
-    if (_controller == null || !_controller!.value.isInitialized) {
-      await initialize();
-    }
+    isRecordingNotifier.value = false;
 
-    if (_controller == null) {
-       debugPrint("Camera controller is null after init attempt");
-       return;
-    }
-
-    if (isRecording) {
-      debugPrint("Already recording");
-      return;
-    }
-
+    // First attempt: Try with Audio
     try {
-      await _controller!.startVideoRecording();
-      isRecordingNotifier.value = true;
-      debugPrint("Started Video Recording");
+      await _startRecordingInternal(enableAudio: true);
     } catch (e) {
-      debugPrint("Error starting video recording: $e");
+      debugPrint("❌ Start with audio failed: $e. Retrying VIDEO ONLY...");
+      // Fallback: Try Video Only
+      try {
+        await _startRecordingInternal(enableAudio: false);
+      } catch (e2) {
+        debugPrint("❌ Video-only start failed: $e2");
+        isRecordingNotifier.value = false;
+        throw Exception("Start failed (Audio & Video): $e2");
+      }
     }
+  }
+
+  static Future<void> _startRecordingInternal({required bool enableAudio}) async {
+    // Dispose existing if any
+    if (_controller != null) {
+      await _controller!.dispose();
+    }
+    
+    await initialize(enableAudio: enableAudio);
+    
+    if (_controller == null || !_controller!.value.isInitialized) {
+       throw Exception("Camera not initialized");
+    }
+
+    await _controller!.startVideoRecording();
+    isRecordingNotifier.value = true;
+    debugPrint("✅ Started Video Recording (Audio: $enableAudio)");
   }
 
   /// Stop recording and save to Gallery

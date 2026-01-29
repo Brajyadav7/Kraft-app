@@ -238,6 +238,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _testVideoRecording() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('🎥 Testing Video: Recording for 3s...')),
+    );
+    try {
+      await RecordingService.startRecording();
+      await Future.delayed(const Duration(seconds: 3));
+      final path = await RecordingService.stopRecording();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Test Saved: ${path?.split('/').last}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Test Failed: $e'), 
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -563,11 +592,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Emergency Numbers',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Emergency Numbers',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // TEST BUTTON
+                        TextButton.icon(
+                          onPressed: _testVideoRecording,
+                          icon: const Icon(Icons.videocam, size: 16),
+                          label: const Text("Test Video"),
+                          style: TextButton.styleFrom(foregroundColor: Colors.blue),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     GridView.builder(

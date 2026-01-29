@@ -8,8 +8,8 @@ import 'incident_history_service.dart';
 import 'recording_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
-import 'dart:convert';
 import 'notification_handler.dart';
+import 'supabase_service.dart';
 
 class EmergencyService {
   static const String emergencyNumber = "112"; // India emergency number
@@ -32,12 +32,28 @@ class EmergencyService {
     try {
       await PermissionService.requestAllPermissions();
 
+      // Explicit Check for Permanent Denial (New Device Issue)
+      if (await Permission.camera.isPermanentlyDenied || await Permission.microphone.isPermanentlyDenied) {
+        onStatusChange('Camera/Mic Permanently Denied. Opening Settings...');
+        await Future.delayed(const Duration(seconds: 2));
+        await openAppSettings();
+        return; // Stop SOS trigger here until fixed
+      }
+
       List<String> contacts = await ContactService.loadNonEmptyContacts();
       if (contacts.isEmpty) contacts = _defaultContacts;
 
-      onStatusChange('Sending alerts to ${contacts.length} contacts...');
+      onStatusChange('Starting Safety Video Recording...');
+      // 1. Start Recording FIRST (Best chance to capture evidence before Call/OS kills background)
+      try {
+        await RecordingService.startRecording();
+      } catch (e) {
+        debugPrint("Could not start recording: $e");
+        onStatusChange('Video Error: ${e.toString().split(':').last.trim()}');
+      }
 
-      // Send SMS with location to all contacts
+      // 2. Send SMS with location
+      onStatusChange('Sending alerts to ${contacts.length} contacts...');
       for (String number in contacts) {
         try {
           await sendSmsWithLocation(number);
@@ -47,19 +63,12 @@ class EmergencyService {
         }
       }
 
+      // 3. Call Emergency (Likely pushes app to background)
       onStatusChange('Calling emergency services...');
       try {
         await callEmergency();
       } catch (e) {
         debugPrint("Could not call emergency number: $e");
-      }
-
-      // Start Video Recording
-      onStatusChange('Starting Safety Video Recording...');
-      try {
-        await RecordingService.startRecording();
-      } catch (e) {
-        debugPrint("Could not start recording: $e");
       }
 
       // Log incident to history
@@ -178,63 +187,44 @@ class EmergencyService {
     try {
       final file = File(filePath);
       if (!file.existsSync()) {
-        onStatusChange?.call('Err: File not found.');
+        onStatusChange?.call('Err: Video file not found.');
         return null;
       }
       
       final fileSize = await file.length();
       onStatusChange?.call('Checking Internet...');
 
-      // 1. REAL Internet Check (HTTP GET)
+      // 1. Simple Internet Check
       try {
         final check = await http.get(Uri.parse('https://www.google.com')).timeout(const Duration(seconds: 5));
         if (check.statusCode != 200) throw Exception('Status ${check.statusCode}');
       } catch (e) {
         debugPrint("Internet Check Failed: $e");
-        onStatusChange?.call('No Internet Access (Google Failed)');
+        onStatusChange?.call('No Internet Access.');
         return null;
       }
 
-      onStatusChange?.call('Uploading (${(fileSize / 1024 / 1024).toStringAsFixed(1)}MB)...');
+      onStatusChange?.call('Uploading Video (${(fileSize / 1024 / 1024).toStringAsFixed(1)}MB)...');
       await Future.delayed(const Duration(seconds: 1));
 
-      // 2. Try File.io (Standard Multipart) - Proven Method
+      // 2. Upload to Supabase Storage
       try {
-        debugPrint("Trying File.io...");
-        var request = http.MultipartRequest('POST', Uri.parse('https://file.io'));
-        request.files.add(await http.MultipartFile.fromPath('file', filePath));
+        final publicUrl = await SupabaseService.uploadVideo(file);
         
-        var response = await request.send().timeout(const Duration(minutes: 5));
-        var responseBody = await response.stream.bytesToString(); // usage of http.Response.fromStream can cause issues sometimes
-
-        if (response.statusCode == 200) {
-          var data = jsonDecode(responseBody);
-          if (data['success'] == true) return data['link'];
-        }
-        debugPrint("File.io Status: ${response.statusCode}");
-      } catch (e) {
-        debugPrint("File.io Error: $e");
-      }
-
-      // 3. Fallback: BashUpload (Simple PUT)
-      try {
-        onStatusChange?.call('Server 2 (BashUpload)...');
-        final response = await http.put(
-          Uri.parse('https://bashupload.com/${file.path.split('/').last}'),
-          body: await file.readAsBytes(),
-        ).timeout(const Duration(minutes: 5));
-        
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final link = response.body.trim();
-          if (link.contains('http')) return link;
+        if (publicUrl != null) {
+          debugPrint("✅ Video Uploaded to Supabase: $publicUrl");
+          return publicUrl;
+        } else {
+          onStatusChange?.call('Upload Failed. Retrying...');
         }
       } catch (e) {
-         debugPrint("BashUpload Error: $e");
+        debugPrint("Supabase Upload Error: $e");
+        onStatusChange?.call('Upload Error: ${e.toString().split(':').last.trim()}');
       }
 
-      onStatusChange?.call('Upload Failed. Check Data.');
+      onStatusChange?.call('Video Upload Failed. Saving locally.');
     } catch (e) {
-      onStatusChange?.call('Err: ${e.toString().split(' ').take(3).join(' ')}');
+      onStatusChange?.call('Crit Err: ${e.toString().split(' ').take(3).join(' ')}');
     }
     return null;
   }
