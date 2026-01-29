@@ -1,0 +1,32 @@
+# Women Safety App - Backend Requirements
+# Python 3.8+
+
+# Web Framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# HTTP/Network
+requests==2.31.0
+urllib3==2.0.4
+
+# AI/ML (Optional - for transformer models)
+# transformers==4.32.1
+# torch==2.0.1
+# numpy==1.24.3
+
+# Database (Optional - for production)
+# SQLAlchemy==2.0.21
+# python-dotenv==1.0.0
+
+# Development
+python-dotenv==1.0.0
+Werkzeug==2.3.7
+
+# Production Server
+gunicorn==21.2.0
+
+# Utilities
+python-dateutil==2.8.2
+
+# Logging
+colorlog==6.7.0

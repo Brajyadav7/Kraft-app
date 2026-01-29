@@ -1,0 +1,7 @@
+[2026-01-27 17:38:52] INFO in __main__: Starting Women Safety App - AI Backend Server
+[2026-01-27 17:38:52] INFO in __main__: Debug mode: False
+[2026-01-27 17:38:52] INFO in __main__: Port: 5000
+[2026-01-27 17:39:34] INFO in __main__: GET /api/health - 127.0.0.1
+[2026-01-27 17:39:34] INFO in __main__: Response: 200
+[2026-01-27 17:40:13] INFO in __main__: GET /api/health - 127.0.0.1
+[2026-01-27 17:40:13] INFO in __main__: Response: 200

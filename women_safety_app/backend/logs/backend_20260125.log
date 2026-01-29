@@ -1,0 +1,12 @@
+[2026-01-25 23:45:57] INFO in __main__: Starting Women Safety App - AI Backend Server
+[2026-01-25 23:45:57] INFO in __main__: Debug mode: False
+[2026-01-25 23:45:57] INFO in __main__: Port: 5000
+[2026-01-25 23:55:15] INFO in __main__: Starting Women Safety App - AI Backend Server
+[2026-01-25 23:55:15] INFO in __main__: Debug mode: False
+[2026-01-25 23:55:15] INFO in __main__: Port: 5000
+[2026-01-25 23:55:33] INFO in __main__: GET / - 127.0.0.1
+[2026-01-25 23:55:33] INFO in __main__: Response: 200
+[2026-01-25 23:55:33] INFO in __main__: GET /favicon.ico - 127.0.0.1
+[2026-01-25 23:55:33] INFO in __main__: Response: 404
+[2026-01-25 23:57:41] INFO in __main__: GET / - 127.0.0.1
+[2026-01-25 23:57:41] INFO in __main__: Response: 200
