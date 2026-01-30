@@ -23,9 +23,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final status = await SafetyCheckInService.getCheckInStatus();
+    final savedContact = await FakeCallService.getSavedContactName();
     setState(() {
       _checkInEnabled = status['isEnabled'] as bool;
       _checkInInterval = status['intervalHours'] as int;
+      _selectedFakeContact = savedContact;
     });
   }
 
@@ -159,6 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (value) {
                         if (value != null) {
                           setState(() => _selectedFakeContact = value);
+                          FakeCallService.saveContactName(value);
                         }
                       },
                     ),
@@ -171,30 +174,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: () {
-                          FakeCallService.startFakeCall(
+                          FakeCallService.scheduleFakeCall(
+                            context,
                             contactName: _selectedFakeContact,
-                            context: context,
-                            onCallAnswered: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Call answered'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                            onCallRejected: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Call from $_selectedFakeContact ended',
-                                  ),
-                                  backgroundColor: Colors.red.shade700,
-                                ),
-                              );
-                            },
+                            delay: const Duration(seconds: 5),
                           );
                         },
-                        child: const Text('Start Fake Call'),
+                        child: const Text('Start Fake Call (5s delay)'),
                       ),
                     ),
                   ],

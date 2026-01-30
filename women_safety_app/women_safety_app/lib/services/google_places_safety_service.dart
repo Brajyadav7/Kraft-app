@@ -10,9 +10,16 @@ class GooglePlacesSafetyService {
     return _instance;
   }
 
-  GooglePlacesSafetyService._internal();
+  GooglePlacesSafetyService._internal() {
+    if (kGoogleApiKey != 'YOUR_GOOGLE_MAPS_API_KEY_HERE' && kGoogleApiKey.isNotEmpty) {
+      _googleApiKey = kGoogleApiKey;
+      _isInitialized = true;
+    }
+  }
 
-  // Replace with your actual Google API Key from Google Cloud Console
+  // REPLACE THIS WITH YOUR ACTUAL API KEY
+  static const String kGoogleApiKey = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+
   String _googleApiKey = '';
   bool _isInitialized = false;
 
@@ -286,4 +293,6 @@ class GooglePlacesSafetyService {
   }
 
   bool get isInitialized => _isInitialized;
+
+  String? get apiKey => _isInitialized ? _googleApiKey : null;
 }

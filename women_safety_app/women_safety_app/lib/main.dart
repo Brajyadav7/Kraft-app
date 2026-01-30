@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/shake_service.dart';
 import 'services/notification_handler.dart'; // Required for background isolation
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -79,7 +79,7 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(fontSize: 14, color: Colors.grey.shade700),
         ),
       ),
-      home: const HomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }

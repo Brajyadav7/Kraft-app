@@ -14,6 +14,8 @@ import 'settings_screen.dart';
 import 'botpress_chat_screen.dart';
 import '../services/voice_command_service.dart';
 import '../services/permission_service.dart';
+import '../services/siren_service.dart';
+import '../services/fake_call_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -277,18 +279,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         centerTitle: false,
         backgroundColor: Colors.red.shade700,
-        elevation: 8,
+        elevation: 4,
         actions: [
-          // Shake detection toggle button
+          // 1. Shake (Status)
           Tooltip(
-            message: _shakeEnabled
-                ? 'Shake detection ON'
-                : 'Shake detection OFF',
+            message: _shakeEnabled ? 'Shake detection ON' : 'Shake detection OFF',
             child: IconButton(
               icon: Icon(
                 _shakeEnabled ? Icons.vibration : Icons.volume_off,
                 size: 24,
-                color: _shakeEnabled ? Colors.yellow : Colors.grey,
+                color: _shakeEnabled ? Colors.yellow : Colors.white70,
               ),
               onPressed: () {
                 setState(() {
@@ -299,40 +299,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     _shakeService.stopListening();
                   }
                 });
-
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                   ScaffoldMessenger.of(context).clearSnackBars();
+                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        _shakeEnabled
-                            ? '✅ Shake Detection ENABLED'
-                            : '❌ Shake Detection DISABLED',
-                      ),
+                      content: Text(_shakeEnabled ? '✅ Shake ON' : '❌ Shake OFF'),
+                      duration: const Duration(seconds: 1),
                     ),
                   );
                 }
               },
             ),
           ),
-          // Voice SOS Toggle
+
+          // 2. AI Assistant
           IconButton(
-            icon: Icon(
-              _voiceSosEnabled ? Icons.mic : Icons.mic_off,
-              color: _voiceSosEnabled ? Colors.greenAccent : Colors.white,
-            ),
-            onPressed: _toggleVoiceSos,
-            tooltip: 'Voice SOS (Say "Help")',
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_add, size: 24),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ContactsScreen()),
-            ),
-            tooltip: 'Add emergency contacts',
-          ),
-          IconButton(
-            icon: const Icon(Icons.smart_toy, size: 24),
+            icon: const Icon(Icons.smart_toy, size: 28),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -341,15 +323,78 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             tooltip: 'AI Safety Assistant',
           ),
+
+          // 3. Fake Call (Quick Access)
           IconButton(
-            icon: const Icon(Icons.settings, size: 24),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
-            tooltip: 'Settings & Features',
+            icon: const Icon(Icons.ring_volume, size: 24),
+            onPressed: () => FakeCallService.scheduleFakeCall(context),
+            tooltip: 'Fake Call',
+          ),
+
+          // 4. Overflow Menu (Saves Space)
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'voice':
+                  _toggleVoiceSos();
+                  break;
+                case 'contacts':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
+                  break;
+                case 'settings':
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                value: 'voice',
+                child: Row(
+                  children: [
+                    Icon(
+                      _voiceSosEnabled ? Icons.mic : Icons.mic_off,
+                      color: _voiceSosEnabled ? Colors.green : Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(_voiceSosEnabled ? 'Voice SOS: ON' : 'Voice SOS: OFF'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'contacts',
+                child: Row(
+                  children: [
+                     Icon(Icons.person_add, color: Colors.blue),
+                     SizedBox(width: 8),
+                     Text('Emergency Contacts'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                     Icon(Icons.settings, color: Colors.grey),
+                     SizedBox(width: 8),
+                     Text('Settings'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await SirenService.toggleSiren();
+          setState(() {}); // Refresh UI state if needed
+        },
+        backgroundColor: SirenService.isPlaying ? Colors.red : Colors.blue.shade900,
+        child: Icon(
+          SirenService.isPlaying ? Icons.volume_off : Icons.campaign,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
